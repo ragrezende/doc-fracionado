@@ -68,9 +68,9 @@ export async function pdfWithInternalLink(): Promise<Uint8Array> {
   return doc.save();
 }
 
-/** 3 páginas de 400 x 300 cujo `MediaBox` existe só no nó `Pages`, herdado pelas páginas. */
+/** 3 páginas de 100 KB, 400 x 300, cujo `MediaBox` existe só no nó `Pages`, herdado pelas páginas. */
 export async function pdfWithInheritedMediaBox(): Promise<Uint8Array> {
-  const doc = await PDFDocument.load(await makeSyntheticPdf({ pages: 3, bytesPerPage: 1_000 }));
+  const doc = await PDFDocument.load(await makeSyntheticPdf({ pages: 3, bytesPerPage: 100_000 }));
   for (const pagina of doc.getPages()) pagina.node.delete(PDFName.of('MediaBox'));
   doc.catalog.Pages().set(PDFName.of('MediaBox'), doc.context.obj([0, 0, 400, 300]));
   return doc.save();
