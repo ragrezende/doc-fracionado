@@ -1,13 +1,37 @@
 import { PdfInvalidoError, PdfProtegidoError, diagnose } from '../pdf/diagnose';
 import { splitPdf } from '../pdf/split';
 import type { Perfil } from '../profiles/types';
-import { validarTamanho, type Resposta } from './protocol';
+import { validarTamanho, type Pedido, type Resposta } from './protocol';
 
 function paraErro(erro: unknown): Resposta {
   if (erro instanceof PdfProtegidoError) return { tipo: 'erro', codigo: 'protegido', mensagem: erro.message };
   if (erro instanceof PdfInvalidoError) return { tipo: 'erro', codigo: 'invalido', mensagem: erro.message };
   const detalhe = erro instanceof Error ? erro.message : String(erro);
   return { tipo: 'erro', codigo: 'interno', mensagem: `Erro inesperado ao processar o PDF: ${detalhe}` };
+}
+
+/**
+ * Trata um pedido do worker: recusa pelo tamanho antes de ler, lê o arquivo (se vier como `File`)
+ * e processa. Nunca lança.
+ */
+export async function processarPedido(pedido: Pedido, emitir: (r: Resposta) => void): Promise<void> {
+  const { arquivo } = pedido;
+  const tamanho = arquivo instanceof ArrayBuffer ? arquivo.byteLength : arquivo.size;
+  const valido = validarTamanho(tamanho);
+  if (!valido.ok) {
+    emitir({ tipo: 'erro', codigo: 'grande_demais', mensagem: valido.mensagem });
+    return;
+  }
+
+  let bytes: Uint8Array;
+  try {
+    bytes = new Uint8Array(arquivo instanceof ArrayBuffer ? arquivo : await arquivo.arrayBuffer());
+  } catch (erro) {
+    const detalhe = erro instanceof Error ? erro.message : String(erro);
+    emitir({ tipo: 'erro', codigo: 'interno', mensagem: `Não foi possível ler o arquivo: ${detalhe}` });
+    return;
+  }
+  await processarArquivo(bytes, pedido.perfil, pedido.margem, emitir);
 }
 
 /**

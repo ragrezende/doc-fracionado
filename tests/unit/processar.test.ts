@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { parsePerfil } from '../../src/profiles/parse';
 import type { Perfil } from '../../src/profiles/types';
-import { LIMITE_SEGURO_BYTES, validarTamanho, type Resposta } from '../../src/worker/protocol';
-import { processarArquivo } from '../../src/worker/processar';
+import { LIMITE_SEGURO_BYTES, validarTamanho, type Pedido, type Resposta } from '../../src/worker/protocol';
+import { processarArquivo, processarPedido } from '../../src/worker/processar';
 import { encryptedMinimalPdf } from '../helpers/fixtures';
 import { makeSyntheticPdf } from '../helpers/syntheticPdf';
 
@@ -63,6 +63,54 @@ describe('processarArquivo: caminho feliz', () => {
       ultimo[r.etapa] = r.feito;
     }
     expect(Object.keys(ultimo).sort()).toEqual(['diagnostico', 'divisao']);
+  });
+});
+
+describe('processarPedido: o worker lê o arquivo, não a thread principal', () => {
+  async function pedidoCom(arquivo: Pedido['arquivo']): Promise<Resposta[]> {
+    const respostas: Resposta[] = [];
+    await processarPedido({ tipo: 'processar', arquivo, perfil, margem: 0.05 }, (r) => respostas.push(r));
+    return respostas;
+  }
+
+  it('aceita o PDF já lido (ArrayBuffer)', async () => {
+    const pdf = await makeSyntheticPdf({ pages: 4, bytesPerPage: 1_000_000 });
+    const respostas = await pedidoCom(pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer);
+    expect(respostas.at(-1)?.tipo).toBe('resultado');
+  });
+
+  it('lê um File uma única vez, dentro do processamento', async () => {
+    const pdf = await makeSyntheticPdf({ pages: 4, bytesPerPage: 1_000_000 });
+    const arquivo = new File([new Uint8Array(pdf)], 'volume.pdf', { type: 'application/pdf' });
+    let leituras = 0;
+    const lerUmaVez = {
+      size: arquivo.size,
+      arrayBuffer: () => (leituras++, arquivo.arrayBuffer()),
+    };
+    const respostas = await pedidoCom(lerUmaVez);
+    expect(leituras).toBe(1);
+    expect(respostas.at(-1)?.tipo).toBe('resultado');
+  });
+
+  it('recusa arquivo grande demais pelo tamanho, sem ler nenhum byte', async () => {
+    const naoDeveLer = {
+      size: LIMITE_SEGURO_BYTES + 1,
+      arrayBuffer: () => Promise.reject(new Error('não deveria ter lido o arquivo')),
+    };
+    expect(await pedidoCom(naoDeveLer)).toEqual([
+      {
+        tipo: 'erro',
+        codigo: 'grande_demais',
+        mensagem: 'Arquivo grande demais para processar com segurança neste navegador.',
+      },
+    ]);
+  });
+
+  it("falha na leitura do arquivo → erro 'interno', sem lançar", async () => {
+    const quebrado = { size: 10, arrayBuffer: () => Promise.reject(new Error('disco desconectado')) };
+    const erro = (await pedidoCom(quebrado)).find((r) => r.tipo === 'erro');
+    expect(erro?.tipo === 'erro' && erro.codigo).toBe('interno');
+    expect(erro?.tipo === 'erro' && erro.mensagem).toMatch(/disco desconectado/);
   });
 });
 

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Mesma CSP do site: o portão também prova que o pdf.js funciona sem eval e sem rede. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; worker-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Harness do portão técnico</title>
+  </head>
+  <body>
+    <input type="file" id="arquivo" accept="application/pdf" />
+    <pre id="saida">Escolha um PDF.</pre>
+    <script type="module" src="./harness.ts"></script>
+  </body>
+</html>

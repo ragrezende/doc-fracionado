@@ -11,7 +11,22 @@ export function validarTamanho(bytes: number): { ok: true } | { ok: false; mensa
   return bytes <= LIMITE_SEGURO_BYTES ? { ok: true } : { ok: false, mensagem: MENSAGEM_GRANDE_DEMAIS };
 }
 
-export type Pedido = { tipo: 'processar'; arquivo: ArrayBuffer; perfil: Perfil; margem: number };
+/**
+ * O que o worker precisa de um arquivo: o tamanho (para recusar sem ler) e a leitura. Um `File`
+ * satisfaz isto. Passar o `File` em vez do conteúdo tira a leitura de centenas de MB da thread
+ * principal, onde ela congelava a tela (medido no portão técnico).
+ */
+export interface ArquivoLegivel {
+  size: number;
+  arrayBuffer(): Promise<ArrayBuffer>;
+}
+
+export type Pedido = {
+  tipo: 'processar';
+  arquivo: ArrayBuffer | ArquivoLegivel;
+  perfil: Perfil;
+  margem: number;
+};
 
 export type Resposta =
   | { tipo: 'progresso'; etapa: 'diagnostico' | 'divisao'; feito: number; total: number }
