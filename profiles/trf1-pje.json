@@ -1,0 +1,18 @@
+{
+  "id": "trf1-pje",
+  "tribunal": "TRF1",
+  "sistema": "PJe",
+  "restricoes": [
+    { "tipo": "tamanho_maximo_arquivo", "bytes": 20971520 },
+    { "tipo": "max_arquivos_por_peticionamento", "quantidade": 40 },
+    { "tipo": "texto_pesquisavel", "nivel": "aviso" }
+  ],
+  "confianca": "reportado_por_usuario",
+  "fonte": "Portaria Presi TRF1 8016281, art. 7º e art. 8º. Limite de 20 MB para PDF confirmado pelo autor no campo 'Arquivos suportados' do editor do PJe.",
+  "verificado_em": "2026-11-04",
+  "observacoes": "A cópia da Portaria consultada foi impressa em 2019; alterações posteriores não foram verificadas. O art. 7º remete o limite definitivo ao campo 'Arquivos suportados' do editor.",
+  "lembretes": [
+    "Marque 'peticionamento fracionado' no editor e envie as partes em ato contínuo (Portaria Presi TRF1 8016281, art. 8º).",
+    "A digitalização de documentos textuais deve usar OCR, gerando dados pesquisáveis (art. 7º, § 2º)."
+  ]
+}
