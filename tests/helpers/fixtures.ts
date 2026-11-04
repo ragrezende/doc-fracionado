@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { PDFDocument, PDFHexString, PDFName, PDFString } from 'pdf-lib';
 import { makeSyntheticPdf } from './syntheticPdf';
 
@@ -65,6 +66,62 @@ export async function pdfWithInternalLink(): Promise<Uint8Array> {
     ctx.obj({ Type: 'Annot', Subtype: 'Link', Rect: [0, 0, 50, 50], Border: [0, 0, 0], Dest: [alvo, 'Fit'] }),
   );
   doc.getPage(0).node.set(PDFName.of('Annots'), ctx.obj([link]));
+  return doc.save();
+}
+
+/**
+ * 6 páginas de 1 MB com UM campo de formulário cujos widgets (`/Kids`) estão em todas as páginas.
+ * Cada widget aponta de volta para a sua página (`/P`) e para o campo (`/Parent`): quem copia a
+ * página 1 chega, pelo campo, aos widgets e às páginas das outras.
+ */
+export async function pdfWithMultiPageField(): Promise<Uint8Array> {
+  const doc = await PDFDocument.load(await makeSyntheticPdf({ pages: 6, bytesPerPage: 1_000_000 }));
+  const ctx = doc.context;
+  const campo = ctx.nextRef();
+  const widgets = doc.getPages().map((pagina) => {
+    const widget = ctx.register(
+      ctx.obj({ Type: 'Annot', Subtype: 'Widget', Rect: [0, 0, 50, 20], P: pagina.ref, Parent: campo }),
+    );
+    pagina.node.set(PDFName.of('Annots'), ctx.obj([widget]));
+    return widget;
+  });
+  ctx.assign(campo, ctx.obj({ FT: 'Tx', T: PDFString.of('campo'), Kids: widgets }));
+  doc.catalog.set(PDFName.of('AcroForm'), ctx.obj({ Fields: [campo] }));
+  return doc.save();
+}
+
+/**
+ * 6 páginas de 1 MB; a página 1 tem um campo de assinatura cujo valor traz
+ * `/Reference [<< /TransformMethod /DocMDP /Data <catálogo> >>]`, como assinaturas com permissões de
+ * alteração gravam. Seguir esse `/Data` leva o catálogo, e com ele o documento inteiro, para a parte.
+ */
+export async function pdfWithDocMdpSignature(): Promise<Uint8Array> {
+  const doc = await PDFDocument.load(await makeSyntheticPdf({ pages: 6, bytesPerPage: 1_000_000 }));
+  const ctx = doc.context;
+  const valor = ctx.obj({
+    Type: 'Sig',
+    Filter: 'Adobe.PPKLite',
+    SubFilter: 'adbe.pkcs7.detached',
+    ByteRange: [0, 0, 0, 0],
+    Contents: PDFHexString.of('00'),
+    Reference: [{ Type: 'SigRef', TransformMethod: 'DocMDP', Data: ctx.trailerInfo.Root }],
+  });
+  const primeira = doc.getPage(0);
+  const widget = ctx.register(
+    ctx.obj({ Type: 'Annot', Subtype: 'Widget', FT: 'Sig', T: PDFString.of('Ass'), Rect: [0, 0, 0, 0], P: primeira.ref, V: valor }),
+  );
+  primeira.node.set(PDFName.of('Annots'), ctx.obj([widget]));
+  doc.catalog.set(PDFName.of('AcroForm'), ctx.obj({ Fields: [widget], SigFlags: 3 }));
+  return doc.save();
+}
+
+/**
+ * 10 páginas de ~0,9 MB mais um stream órfão de 4 MB que nenhuma página referencia: o arquivo tem
+ * ~13 MB (acima do limite do TJGO), mas regravado pelo pdf-lib, sem o órfão, tem ~9 MB e cumpre.
+ */
+export async function pdfWithOrphanStream(): Promise<Uint8Array> {
+  const doc = await PDFDocument.load(await makeSyntheticPdf({ pages: 10, bytesPerPage: 900_000 }));
+  doc.context.register(doc.context.stream(randomBytes(4_000_000), {}));
   return doc.save();
 }
 

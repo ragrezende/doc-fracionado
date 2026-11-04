@@ -20,6 +20,24 @@ export function mensagemDeErroDoWorker(detalhe: string | undefined): string {
   return texto ? `${T.erroLeitura} ${texto}` : `${T.erroLeitura} Recarregue a página e tente de novo.`;
 }
 
+/**
+ * Mensagem para uma página que sozinha não cumpre o perfil. Distingue os dois motivos: maior que o
+ * limite do arquivo, ou menor que ele mas acima da média por página que o perfil exige. Dizer "não
+ * cabe no limite" para uma página de 5 MB num limite de 12 MB seria falso e confundiria o usuário.
+ */
+export function mensagemPaginaPesada(
+  pagina: number,
+  bytesDaPagina: number,
+  limiteEfetivo: number,
+  nomeDoPerfil: string,
+): string {
+  const tamanho = formatarMB(bytesDaPagina);
+  const orientacao = 'Esta versão não comprime PDFs: reduza ou digitalize novamente essa página.';
+  return bytesDaPagina > limiteEfetivo
+    ? `A página ${pagina} tem ${tamanho} e, sozinha, não cabe no limite do perfil. ${orientacao}`
+    : `A página ${pagina} tem ${tamanho}. Isso cabe no limite de tamanho do arquivo, mas ultrapassa a média máxima por página que o perfil ${nomeDoPerfil} exige, e nenhuma divisão das páginas vizinhas resolve. ${orientacao}`;
+}
+
 export function rotuloDaConfianca(c: Confianca): string {
   return {
     oficial: 'Fonte oficial',
@@ -65,7 +83,5 @@ export const T = {
   lembretes: 'Lembretes',
   baixarZip: 'Baixar ZIP',
   baixarOriginal: 'Baixar o PDF original',
-  paginaPesada: (pagina: number, tamanho: string) =>
-    `A página ${pagina} tem ${tamanho} e, sozinha, não cabe no limite do perfil. Esta versão não comprime PDFs: reduza ou digitalize novamente essa página.`,
   erroLeitura: 'Não foi possível processar o arquivo.',
 } as const;

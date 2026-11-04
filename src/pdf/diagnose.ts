@@ -125,16 +125,28 @@ export async function diagnose(bytes: Uint8Array): Promise<Diagnostico> {
   }
   if (doc.isEncrypted) throw new PdfProtegidoError();
 
-  const paginas = doc.getPageCount();
+  // Um PDF com cabeçalho mas estrutura quebrada (download truncado, catálogo sem páginas) carrega,
+  // mas falha ao ler a árvore de páginas com erros crus da biblioteca. Todo o acesso estrutural
+  // fica aqui dentro para virar uma mensagem clara.
+  let paginas: number;
+  let pesoPorPaginaEstimado: number[];
+  let possuiAssinaturaDigital: boolean;
+  try {
+    paginas = doc.getPageCount();
+    pesoPorPaginaEstimado = doc.getPages().map((p) => pesoDaPagina(doc, p));
+    possuiAssinaturaDigital = temAssinatura(doc);
+  } catch (erro) {
+    throw new PdfInvalidoError(undefined, { cause: erro });
+  }
   if (paginas === 0) throw new PdfInvalidoError('O PDF não tem páginas.');
 
   const paginasComTexto = await contarPaginasComTexto(bytes);
   return {
     paginas,
     bytesTotal: bytes.length,
-    pesoPorPaginaEstimado: doc.getPages().map((p) => pesoDaPagina(doc, p)),
+    pesoPorPaginaEstimado,
     paginasComTexto,
     textoPesquisavel: paginasComTexto === paginas ? 'sim' : paginasComTexto === 0 ? 'nao' : 'parcial',
-    possuiAssinaturaDigital: temAssinatura(doc),
+    possuiAssinaturaDigital,
   };
 }

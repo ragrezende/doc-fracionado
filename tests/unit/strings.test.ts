@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { formatarData, formatarMB, mensagemDeErroDoWorker, rotuloDaConfianca } from '../../src/ui/strings';
+import {
+  formatarData,
+  formatarMB,
+  mensagemDeErroDoWorker,
+  mensagemPaginaPesada,
+  rotuloDaConfianca,
+} from '../../src/ui/strings';
 
 describe('formatarMB', () => {
   it('usa vírgula decimal e MB binário, como o tribunal exibe', () => {
@@ -25,6 +31,30 @@ describe('mensagemDeErroDoWorker', () => {
 
   it('acrescenta o detalhe quando existe', () => {
     expect(mensagemDeErroDoWorker('falha ao carregar')).toBe('Não foi possível processar o arquivo. falha ao carregar');
+  });
+});
+
+describe('mensagemPaginaPesada', () => {
+  const LIMITE = 11_953_766;
+
+  it('página maior que o limite do arquivo: diz que não cabe no limite', () => {
+    const m = mensagemPaginaPesada(3, 13_000_000, LIMITE, 'TJGO · Projudi');
+    expect(m).toContain('A página 3 tem 12,4 MB');
+    expect(m).toMatch(/não cabe no limite/);
+    expect(m).not.toMatch(/média/);
+  });
+
+  it('página menor que o limite, mas pesada demais para a média: explica a regra de média por página', () => {
+    const m = mensagemPaginaPesada(11, 5_000_000, LIMITE, 'TJGO · Projudi');
+    expect(m).toContain('A página 11 tem 4,8 MB');
+    expect(m).toMatch(/média/);
+    expect(m).toContain('TJGO · Projudi');
+    expect(m).not.toMatch(/não cabe no limite/); // seria falso: 4,8 MB cabe em 12 MB
+  });
+
+  it('em ambos os casos avisa que esta versão não comprime', () => {
+    expect(mensagemPaginaPesada(1, 99_000_000, LIMITE, 'X')).toMatch(/não comprime/);
+    expect(mensagemPaginaPesada(1, 1_000_000, LIMITE, 'X')).toMatch(/não comprime/);
   });
 });
 

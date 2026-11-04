@@ -59,6 +59,19 @@ describe('diagnose: arquivos problemáticos', () => {
     await expect(diagnose(new Uint8Array())).rejects.toBeInstanceOf(PdfInvalidoError);
   });
 
+  it('rejeita PDF truncado (só o cabeçalho) com PdfInvalidoError, sem vazar erro de biblioteca', async () => {
+    const truncado = new TextEncoder().encode('%PDF-1.4\n');
+    await expect(diagnose(truncado)).rejects.toBeInstanceOf(PdfInvalidoError);
+    await expect(diagnose(truncado)).rejects.not.toThrow(/Cannot read|undefined|Expected instance/);
+  });
+
+  it('rejeita PDF cujo catálogo não tem árvore de páginas com PdfInvalidoError', async () => {
+    const semPaginas = new TextEncoder().encode(
+      '%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R /Size 2 >>\n%%EOF\n',
+    );
+    await expect(diagnose(semPaginas)).rejects.toBeInstanceOf(PdfInvalidoError);
+  });
+
   it('rejeita PDF de 0 páginas com PdfInvalidoError em português', async () => {
     // addDefaultPage: false, senão o pdf-lib insere uma página em branco ao salvar.
     const vazio = await (await PDFDocument.create()).save({ addDefaultPage: false });

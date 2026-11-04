@@ -5,7 +5,9 @@ import type { Parte } from '../pdf/split';
 import { montarZip } from '../pdf/zip';
 import { carregarPerfis } from '../profiles/load';
 import { gerarRelatorio } from '../report/report';
+import { criarWorkerSeguro } from '../worker/criarWorker';
 import type { Pedido, Resposta } from '../worker/protocol';
+import urlDoWorker from '../worker/processar.worker.ts?worker&url';
 import { mensagemDeErroDoWorker } from './strings';
 import { criarTela, type Estado } from './view';
 
@@ -67,7 +69,7 @@ function processar(): void {
   const doPerfil = perfil;
   definir({ fase: 'processando', nomeArquivo: doArquivo.name, etapa: 'diagnostico', feito: 0, total: 1 });
 
-  const meuWorker = new Worker(new URL('../worker/processar.worker.ts', import.meta.url), { type: 'module' });
+  const meuWorker = criarWorkerSeguro(new URL(urlDoWorker, location.href).href);
   worker = meuWorker;
   let diagnostico: Diagnostico | undefined;
 
@@ -117,7 +119,8 @@ function processar(): void {
           nomeArquivo: doArquivo.name,
           diagnostico: diagnostico!,
           relatorio,
-          jaCumpre: partes.length === 1,
+          // "Já cumpre" só vale para o ORIGINAL; uma parte única regravada vai no ZIP.
+          jaCumpre: r.resultado.original,
         });
       }
     }

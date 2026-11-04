@@ -1,5 +1,6 @@
 import { PDFArray, PDFDict, PDFDocument, PDFName, type PDFObject } from 'pdf-lib';
 import { limiteEfetivoBytes, parteCumpre } from '../profiles/rules';
+import { isolarPaginas } from './isolar';
 import type { Perfil } from '../profiles/types';
 
 /** Páginas em base 1, ambas inclusivas. */
@@ -11,7 +12,12 @@ export interface Parte {
 }
 
 export type ResultadoDivisao =
-  | { ok: true; partes: Parte[] }
+  /**
+   * `original: true` só quando o arquivo recebido já cumpre o perfil e a única parte é ele mesmo,
+   * byte a byte. Uma única parte regravada (o original excedia o limite por causa de objetos mortos)
+   * tem `original: false`: quem a entrega não pode dizer que "o original já cumpre".
+   */
+  | { ok: true; original: boolean; partes: Parte[] }
   | { ok: false; paginaProblematica: number; bytesDaPagina: number };
 
 export interface OpcoesDivisao {
@@ -113,6 +119,43 @@ async function acharMaiorParte(
 }
 
 /**
+ * A página `ini` não cumpre o perfil nem sozinha (típico da regra de média por página: uma foto
+ * pesada no fim do volume). A parte anterior pode ceder as `k` últimas páginas, leves, para que
+ * a pesada entre numa parte onde a média fecha. Tenta k = 1, 2, … e fica com o primeiro que serve.
+ * Devolve a nova posição de `ini` (já com as duas partes trocadas em `partes`), ou `undefined`.
+ * É um recuo de um nível só: não procura a divisão ótima, só evita o falso "precisa de compressão".
+ */
+async function recuarParteAnterior(
+  doc: PDFDocument,
+  partes: Parte[],
+  ini: number,
+  total: number,
+  perfil: Perfil,
+  margem: number,
+  bytesPorPagina: number,
+): Promise<number | undefined> {
+  const anterior = partes.at(-1);
+  if (!anterior) return undefined;
+  const inicioAnterior = anterior.primeiraPagina - 1;
+
+  for (let k = 1; k < anterior.ultimaPagina - anterior.primeiraPagina + 1; k++) {
+    const novoIni = ini - k;
+    const paginasAparadas = novoIni - inicioAnterior;
+    const aparada = await gerarParte(doc, inicioAnterior, paginasAparadas);
+    if (!parteCumpre(perfil, aparada.length, paginasAparadas, margem)) continue;
+
+    const nova = await acharMaiorParte(doc, novoIni, total - novoIni, perfil, margem, bytesPorPagina);
+    if (!nova.ok || nova.n <= k) continue; // a nova parte precisa chegar até a página pesada
+
+    partes.pop();
+    partes.push({ indice: partes.length + 1, primeiraPagina: inicioAnterior + 1, ultimaPagina: novoIni, bytes: aparada });
+    partes.push({ indice: partes.length + 1, primeiraPagina: novoIni + 1, ultimaPagina: novoIni + nova.n, bytes: nova.bytes });
+    return novoIni + nova.n;
+  }
+  return undefined;
+}
+
+/**
  * Divide o PDF em partes que cumprem o perfil. Corta só em limite de página e preserva a ordem.
  * O tamanho de cada parte é medido gerando-a de verdade, nunca estimado: fontes e imagens
  * compartilhadas se repetem em cada parte, então somar o peso das páginas não prevê o resultado.
@@ -130,10 +173,11 @@ export async function splitPdf(
   // Já cumpre o perfil: devolve o arquivo original, byte a byte, sem reserializar.
   if (parteCumpre(perfil, origem.length, total, margem)) {
     opts.onProgresso?.(total, total);
-    return { ok: true, partes: [{ indice: 1, primeiraPagina: 1, ultimaPagina: total, bytes: origem }] };
+    return { ok: true, original: true, partes: [{ indice: 1, primeiraPagina: 1, ultimaPagina: total, bytes: origem }] };
   }
 
   removerLinksInternos(doc);
+  isolarPaginas(doc);
 
   const partes: Parte[] = [];
   let ini = 0;
@@ -141,12 +185,18 @@ export async function splitPdf(
   while (ini < total) {
     const achado = await acharMaiorParte(doc, ini, total - ini, perfil, margem, bytesPorPagina);
     if (!achado.ok) {
-      return { ok: false, paginaProblematica: ini + 1, bytesDaPagina: achado.bytesDaPagina };
+      const novoIni = await recuarParteAnterior(doc, partes, ini, total, perfil, margem, bytesPorPagina);
+      if (novoIni === undefined) {
+        return { ok: false, paginaProblematica: ini + 1, bytesDaPagina: achado.bytesDaPagina };
+      }
+      ini = novoIni;
+      opts.onProgresso?.(ini, total);
+      continue;
     }
     partes.push({ indice: partes.length + 1, primeiraPagina: ini + 1, ultimaPagina: ini + achado.n, bytes: achado.bytes });
     bytesPorPagina = achado.bytes.length / achado.n;
     ini += achado.n;
     opts.onProgresso?.(ini, total);
   }
-  return { ok: true, partes };
+  return { ok: true, original: false, partes };
 }

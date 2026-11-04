@@ -1,4 +1,6 @@
-import { getDocument } from 'pdfjs-dist';
+// Build "legacy": traz polyfills (por exemplo, de `Promise.try`, que o build moderno exige e só existe
+// a partir do Chrome/Edge 128) e é o mesmo que o Node usa nos testes. Custa ~4% a mais de tamanho.
+import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 export type DocumentoPdfjs = Awaited<ReturnType<typeof getDocument>['promise']>;
 

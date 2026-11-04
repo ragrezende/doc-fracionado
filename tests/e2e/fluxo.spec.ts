@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { unzipSync } from 'fflate';
-import { encryptedMinimalPdf } from '../helpers/fixtures';
+import { encryptedMinimalPdf, pdfWithOrphanStream } from '../helpers/fixtures';
 import { makeSyntheticPdf, readPageWidths } from '../helpers/syntheticPdf';
 
 /**
@@ -60,6 +60,25 @@ test('PDF que já cabe: diz que já cumpre e oferece o original sem alterações
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Baixar o PDF original' }).click();
   expect(new Uint8Array(readFileSync((await (await download).path())!))).toEqual(pdf);
+});
+
+test('original acima do limite que só cabe regravado: NÃO diz "já cumpre", entrega a parte regravada no ZIP', async ({ page }) => {
+  await abrir(page, 'tjgo-projudi');
+  const inchado = await pdfWithOrphanStream();
+  expect(inchado.length).toBeGreaterThan(12_582_912); // o original excede até o limite declarado do TJGO
+
+  await page.getByLabel('Arquivo PDF').setInputFiles(arquivo('inchado.pdf', inchado));
+
+  await expect(page.getByRole('button', { name: 'Baixar ZIP' })).toBeVisible();
+  await expect(page.getByText('já cumpre o perfil')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Baixar o PDF original' })).toHaveCount(0);
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Baixar ZIP' }).click();
+  const zip = unzipSync(readFileSync((await (await download).path())!));
+  expect(Object.keys(zip)).toEqual(['inchado_parte01de01.pdf']);
+  expect(zip['inchado_parte01de01.pdf']!.length).toBeLessThanOrEqual(12_582_912); // a parte entregue cumpre o limite
+  expect(zip['inchado_parte01de01.pdf']!.length).toBeLessThan(inchado.length);
 });
 
 test('PDF protegido: mostra o aviso e nenhum botão de download', async ({ page }) => {

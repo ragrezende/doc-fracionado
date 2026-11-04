@@ -2,7 +2,8 @@ import type { Diagnostico } from '../pdf/diagnose';
 import { estaDesatualizado } from '../profiles/parse';
 import type { Perfil } from '../profiles/types';
 import type { Relatorio } from '../report/report';
-import { T, formatarData, formatarMB, rotuloDaConfianca } from './strings';
+import { limiteEfetivoBytes } from '../profiles/rules';
+import { T, formatarData, formatarMB, mensagemPaginaPesada, rotuloDaConfianca } from './strings';
 
 export type Estado =
   | { fase: 'inicial' }
@@ -166,7 +167,16 @@ export function criarTela(raiz: HTMLElement, perfis: Perfil[], acoes: Acoes): Te
           area.replaceChildren(
             el('h2', {}, T.resultado),
             el('p', {}, `${T.arquivo}: `, el('strong', {}, estado.nomeArquivo)),
-            el('p', { role: 'alert', class: 'erro' }, T.paginaPesada(estado.paginaProblematica, formatarMB(estado.bytesDaPagina))),
+            el(
+              'p',
+              { role: 'alert', class: 'erro' },
+              mensagemPaginaPesada(
+                estado.paginaProblematica,
+                estado.bytesDaPagina,
+                limiteEfetivoBytes(perfil),
+                `${perfil.tribunal} · ${perfil.sistema}`,
+              ),
+            ),
           );
           return;
         case 'pronto': {

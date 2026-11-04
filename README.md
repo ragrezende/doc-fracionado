@@ -6,6 +6,8 @@ Feito para advogados que protocolam volumes pesados no Projudi e no PJe e precis
 
 ## Como usar
 
+Funciona nos navegadores atuais (Chrome, Edge, Firefox, Safari). O pdf.js é usado na versão compatível com navegadores mais antigos, e há um teste que simula um Chrome/Edge anterior à versão 128.
+
 1. Abra a página.
 2. Escolha o **perfil do tribunal** (por exemplo, TJGO · Projudi).
 3. Escolha o **arquivo PDF**.
@@ -16,7 +18,7 @@ As partes recebem o nome `NomeOriginal_parte01de09.pdf`. A divisão corta só no
 
 ## Privacidade, e como conferir
 
-Tudo acontece no seu navegador. O site é estático, não tem servidor, não usa analytics e não carrega nada de terceiros. A página é servida com uma política de segurança (CSP) que proíbe qualquer requisição de rede depois do carregamento.
+Tudo acontece no seu navegador. O site é estático, não tem servidor, não usa analytics e não carrega nada de terceiros. A página é servida com uma política de segurança (CSP) que proíbe qualquer requisição de rede depois do carregamento, **inclusive dentro dos processos em segundo plano (workers) que leem o PDF**: eles são criados de forma a herdar essa política, e um teste confere que um `fetch` feito dentro de cada um é bloqueado.
 
 Você não precisa confiar nisso, pode verificar:
 
@@ -27,6 +29,7 @@ Você não precisa confiar nisso, pode verificar:
 
 - **Não oferece garantia de que o tribunal aceitará o arquivo.** Ela confere o PDF contra o limite do perfil escolhido, e os limites mudam. Confira o limite na tela de envio do tribunal.
 - **Links e marcadores internos não sobrevivem à divisão.** Links que apontam para outra página do mesmo PDF são removidos das partes, e o sumário/marcadores do PDF não são copiados.
+- **Formulários preenchíveis e camadas opcionais do PDF não são preservados** nas partes. Em PDFs de autos isso é raro, mas se o seu arquivo os usa, confira as partes.
 - **Assinatura digital:** dividir um PDF assinado invalida a assinatura nas partes geradas. A ferramenta avisa quando detecta uma.
 - **Não faz OCR nem compressão de PDF.** Se uma única página, sozinha, não cabe no limite, a ferramenta informa qual é; ela precisa ser reduzida antes.
 - **Arquivos acima de 300 MB são recusados**, com mensagem clara.

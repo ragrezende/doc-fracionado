@@ -14,7 +14,8 @@ O repositório nasce **privado**. Este documento lista o que só uma pessoa pode
 ## 2. Verificações já feitas
 
 - [x] **Licenças das dependências** (2026-11-04). `npm run check:licenses` passa: `pdf-lib` (MIT), `pdfjs-dist` (Apache-2.0), `fflate` (MIT) e as transitivas (`pako`, `tslib`) são todas permissivas. A CI repete a verificação.
-- [x] **CSP e rede.** Os testes `tests/e2e/privacidade.spec.ts` provam que não há requisição externa, que `fetch` é bloqueado e que o `index.html` não permite `eval` nem recursos de terceiros.
+- [x] **CSP e rede.** Os testes `tests/e2e/privacidade.spec.ts` provam que não há requisição externa, que `fetch` é bloqueado na página **e dentro de cada worker** (que são `blob:` e herdam a CSP do documento; um worker carregado de uma URL `http` não herdaria, porque o GitHub Pages não envia cabeçalho de CSP) e que o `index.html` não permite `eval` nem recursos de terceiros.
+- [x] **Navegadores sem `Promise.try`** (Chrome/Edge anteriores à versão 128): `tests/e2e/navegadorAntigo.spec.ts` simula esse navegador. O build moderno do pdf.js falhava nele; o build "legacy" funciona.
 
 ## 3. Publicar
 

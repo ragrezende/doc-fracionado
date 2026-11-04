@@ -3,7 +3,9 @@
 import { carregarPerfis } from '../src/profiles/load';
 import { limiteEfetivoBytes } from '../src/profiles/rules';
 import type { Diagnostico } from '../src/pdf/diagnose';
+import { criarWorkerSeguro } from '../src/worker/criarWorker';
 import type { Pedido, Resposta } from '../src/worker/protocol';
+import urlDoWorker from '../src/worker/processar.worker.ts?worker&url';
 
 export interface ResultadoBench {
   ok: boolean;
@@ -40,7 +42,7 @@ document.getElementById('arquivo')!.addEventListener('change', async (evento) =>
   }, 100);
 
   const inicio = performance.now();
-  const worker = new Worker(new URL('../src/worker/processar.worker.ts', import.meta.url), { type: 'module' });
+  const worker = criarWorkerSeguro(new URL(urlDoWorker, location.href).href); // o mesmo que o site usa
   let diagnostico: Diagnostico | undefined;
 
   const concluir = (parcial: Omit<ResultadoBench, 'tempoMs' | 'maxCongelamentoMs'>): void => {

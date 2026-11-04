@@ -1,11 +1,14 @@
 // Ponto de entrada do Web Worker: liga `postMessage` a `processarArquivo`. Só roda no navegador.
-import { GlobalWorkerOptions } from 'pdfjs-dist';
-import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs'; // o mesmo módulo que src/pdf/pdfjs.ts usa
+import pdfjsWorkerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
+import { criarWorkerSeguro } from './criarWorker';
 import { processarPedido } from './processar';
 import type { Pedido, Resposta } from './protocol';
 
-// No navegador o pdf.js precisa saber onde está o seu worker (mesma origem, permitido pela CSP).
-GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
+// O pdf.js tem o seu próprio worker, que também recebe os bytes do PDF. Criá-lo como worker `blob:`
+// o faz herdar a CSP do documento (ver criarWorkerSeguro). `import.meta.url` aqui é a URL http real
+// deste módulo, base correta para resolver a URL do worker do pdf.js.
+GlobalWorkerOptions.workerPort = criarWorkerSeguro(new URL(pdfjsWorkerUrl, import.meta.url).href);
 
 interface EscopoDoWorker {
   onmessage: ((evento: MessageEvent<Pedido>) => void) | null;

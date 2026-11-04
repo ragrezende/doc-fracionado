@@ -2,10 +2,16 @@ import { PDFDocument, PDFName } from 'pdf-lib';
 import { describe, expect, it } from 'vitest';
 import { carregarPerfis } from '../../src/profiles/load';
 import { parsePerfil } from '../../src/profiles/parse';
-import { limiteEfetivoBytes } from '../../src/profiles/rules';
+import { limiteEfetivoBytes, parteCumpre } from '../../src/profiles/rules';
 import type { Perfil } from '../../src/profiles/types';
 import { splitPdf, type Parte } from '../../src/pdf/split';
-import { pdfWithInheritedMediaBox, pdfWithInternalLink } from '../helpers/fixtures';
+import {
+  pdfWithDocMdpSignature,
+  pdfWithInheritedMediaBox,
+  pdfWithInternalLink,
+  pdfWithMultiPageField,
+  pdfWithOrphanStream,
+} from '../helpers/fixtures';
 import { makeSyntheticPdf, readPageWidths } from '../helpers/syntheticPdf';
 
 function perfilComLimite(bytes: number): Perfil {
@@ -111,6 +117,28 @@ describe('splitPdf: limites e regras do perfil', () => {
     expect(await Promise.all(partes.map((p) => contarPaginas(p.bytes)))).toEqual([1, 1, 1, 1]);
   });
 
+  it('TJGO: uma página pesada no fim é resolvida cedendo páginas leves da parte anterior (não pede compressão à toa)', async () => {
+    // 10 páginas de 1,1 MB e uma de 5 MB. A página 11 sozinha viola a média (5 MB > 2 MB), mas
+    // junto de 4 páginas leves a média cai para ~1,9 MB e cumpre: [1-6] [7-11].
+    const pesos = [...Array(10).fill(1_100_000), 5_000_000];
+    const pdf = await makeSyntheticPdf({ pages: 11, bytesPerPage: (i) => pesos[i]! });
+    const partes = await dividirOuFalhar(pdf, tjgo());
+
+    for (const p of partes) {
+      expect(parteCumpre(tjgo(), p.bytes.length, p.ultimaPagina - p.primeiraPagina + 1)).toBe(true);
+    }
+    expect(partes.map((p) => p.indice)).toEqual(partes.map((_, i) => i + 1));
+    expect(await larguraDasPartes(partes)).toEqual(Array.from({ length: 11 }, (_, i) => 200 + i));
+  });
+
+  it('TJGO: continua falhando quando não existe divisão válida (página pesada logo depois de uma só página leve)', async () => {
+    // [1,1 MB] [5 MB]: juntas dão média de 3 MB, e a de 5 MB sozinha dá 5 MB. Sem solução.
+    const pdf = await makeSyntheticPdf({ pages: 2, bytesPerPage: (i) => (i === 0 ? 1_100_000 : 5_000_000) });
+    const r = await splitPdf(pdf, tjgo());
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.paginaProblematica).toBe(2);
+  });
+
   it('falha no TJGO quando uma página sozinha viola a média (5 MB numa página)', async () => {
     const pdf = await makeSyntheticPdf({ pages: 1, bytesPerPage: 5_000_000 });
     const r = await splitPdf(pdf, tjgo());
@@ -127,12 +155,35 @@ describe('splitPdf: entrada inválida', () => {
 });
 
 describe('splitPdf: PDF que já cabe', () => {
-  it('devolve uma única parte idêntica ao original, sem reserializar', async () => {
+  it('devolve uma única parte idêntica ao original, sem reserializar, e diz que é o original', async () => {
     const pdf = await makeSyntheticPdf({ pages: 3, bytesPerPage: 1_000 });
-    const partes = await dividirOuFalhar(pdf, perfilComLimite(3_000_000));
-    expect(partes).toHaveLength(1);
-    expect(partes[0]!.bytes).toEqual(pdf);
-    expect([partes[0]!.indice, partes[0]!.primeiraPagina, partes[0]!.ultimaPagina]).toEqual([1, 1, 3]);
+    const r = await splitPdf(pdf, perfilComLimite(3_000_000));
+    if (!r.ok) throw new Error('falhou');
+    expect(r.original).toBe(true);
+    expect(r.partes).toHaveLength(1);
+    expect(r.partes[0]!.bytes).toEqual(pdf);
+    expect([r.partes[0]!.indice, r.partes[0]!.primeiraPagina, r.partes[0]!.ultimaPagina]).toEqual([1, 1, 3]);
+  });
+
+  it('original grande demais que só cabe regravado: parte única que NÃO é o original', async () => {
+    const pdf = await pdfWithOrphanStream();
+    const perfil = tjgo();
+    expect(pdf.length).toBeGreaterThan(12_582_912); // o original excede até o limite declarado
+
+    const r = await splitPdf(pdf, perfil);
+    if (!r.ok) throw new Error(`falhou na página ${r.paginaProblematica}`);
+
+    expect(r.partes).toHaveLength(1);
+    expect(r.original).toBe(false);
+    expect(r.partes[0]!.bytes.length).toBeLessThan(pdf.length);
+    expect(r.partes[0]!.bytes.length).toBeLessThanOrEqual(limiteEfetivoBytes(perfil));
+    expect(await contarPaginas(r.partes[0]!.bytes)).toBe(10);
+  });
+
+  it('dividido em várias partes nunca é "original"', async () => {
+    const pdf = await makeSyntheticPdf({ pages: 10, bytesPerPage: 1_000_000 });
+    const r = await splitPdf(pdf, perfilComLimite(3_000_000));
+    expect(r.ok && r.original).toBe(false);
   });
 });
 
@@ -143,6 +194,18 @@ describe('splitPdf: o que não pode contaminar as partes', () => {
 
     expect(await Promise.all(partes.map((p) => contarPaginas(p.bytes)))).toEqual([2, 2, 2]);
     // Uma página arrastada pelo link somaria ~1 MB a uma parte de ~2 MB.
+    for (const p of partes) expect(p.bytes.length).toBeLessThan(2_300_000);
+  });
+
+  it('não deixa um campo de formulário multipágina arrastar as outras páginas', async () => {
+    const partes = await dividirOuFalhar(await pdfWithMultiPageField(), perfilComLimite(3_000_000));
+    expect(await Promise.all(partes.map((p) => contarPaginas(p.bytes)))).toEqual([2, 2, 2]);
+    for (const p of partes) expect(p.bytes.length).toBeLessThan(2_300_000);
+  });
+
+  it('não deixa uma assinatura DocMDP (/Reference /Data → catálogo) arrastar o documento inteiro', async () => {
+    const partes = await dividirOuFalhar(await pdfWithDocMdpSignature(), perfilComLimite(3_000_000));
+    expect(await Promise.all(partes.map((p) => contarPaginas(p.bytes)))).toEqual([2, 2, 2]);
     for (const p of partes) expect(p.bytes.length).toBeLessThan(2_300_000);
   });
 
