@@ -6,7 +6,7 @@ import { montarZip } from '../pdf/zip';
 import { carregarPerfis } from '../profiles/load';
 import { gerarRelatorio } from '../report/report';
 import type { Pedido, Resposta } from '../worker/protocol';
-import { T } from './strings';
+import { mensagemDeErroDoWorker } from './strings';
 import { criarTela, type Estado } from './view';
 
 const MARGEM = 0.05;
@@ -79,7 +79,7 @@ function processar(): void {
   meuWorker.onerror = (e) => {
     if (minha !== execucao) return;
     encerrar();
-    definir({ fase: 'erro', mensagem: `${T.erroLeitura} ${e.message}` });
+    definir({ fase: 'erro', mensagem: mensagemDeErroDoWorker(e.message) });
   };
   meuWorker.onmessage = (e: MessageEvent<Resposta>) => {
     if (minha !== execucao) return;

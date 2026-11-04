@@ -11,6 +11,15 @@ export function formatarData(iso: string): string {
   return `${dia}/${mes}/${ano}`;
 }
 
+/**
+ * Mensagem para quando o worker falha. O evento de erro de um worker que nem chegou a carregar
+ * (por exemplo, sem rede) vem com `message` vazia, o que antes aparecia na tela como "undefined".
+ */
+export function mensagemDeErroDoWorker(detalhe: string | undefined): string {
+  const texto = detalhe?.trim();
+  return texto ? `${T.erroLeitura} ${texto}` : `${T.erroLeitura} Recarregue a página e tente de novo.`;
+}
+
 export function rotuloDaConfianca(c: Confianca): string {
   return {
     oficial: 'Fonte oficial',

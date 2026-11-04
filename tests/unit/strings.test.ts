@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatarData, formatarMB, rotuloDaConfianca } from '../../src/ui/strings';
+import { formatarData, formatarMB, mensagemDeErroDoWorker, rotuloDaConfianca } from '../../src/ui/strings';
 
 describe('formatarMB', () => {
   it('usa vírgula decimal e MB binário, como o tribunal exibe', () => {
@@ -12,6 +12,19 @@ describe('formatarMB', () => {
 describe('formatarData', () => {
   it('converte AAAA-MM-DD para DD/MM/AAAA', () => {
     expect(formatarData('2026-11-02')).toBe('02/11/2026');
+  });
+});
+
+describe('mensagemDeErroDoWorker', () => {
+  it('nunca mostra "undefined": sem detalhe, orienta a recarregar a página', () => {
+    const esperado = 'Não foi possível processar o arquivo. Recarregue a página e tente de novo.';
+    expect(mensagemDeErroDoWorker(undefined)).toBe(esperado);
+    expect(mensagemDeErroDoWorker('')).toBe(esperado);
+    expect(mensagemDeErroDoWorker('   ')).toBe(esperado);
+  });
+
+  it('acrescenta o detalhe quando existe', () => {
+    expect(mensagemDeErroDoWorker('falha ao carregar')).toBe('Não foi possível processar o arquivo. falha ao carregar');
   });
 });
 

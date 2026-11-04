@@ -93,6 +93,19 @@ test('trocar de arquivo durante o processamento descarta o resultado do anterior
   await expect(page.getByRole('button', { name: 'Baixar ZIP' })).toHaveCount(0);
 });
 
+test('sem rede depois de carregar, o worker não baixa: a mensagem é clara e não diz "undefined"', async ({ page, context }) => {
+  await abrir(page, 'tjgo-projudi');
+  await page.waitForLoadState('networkidle');
+  await context.setOffline(true);
+
+  const pdf = await makeSyntheticPdf({ pages: 3, bytesPerPage: 1_000 });
+  await page.getByLabel('Arquivo PDF').setInputFiles(arquivo('pequeno.pdf', pdf));
+
+  const alerta = page.getByRole('alert');
+  await expect(alerta).toContainText('Não foi possível processar o arquivo.');
+  await expect(alerta).not.toContainText('undefined');
+});
+
 test('trocar o perfil reprocessa o mesmo arquivo com o limite do novo perfil', async ({ page }) => {
   await abrir(page, 'tjgo-projudi');
   const pdf = await makeSyntheticPdf({ pages: 12, bytesPerPage: 1_000_000 });
