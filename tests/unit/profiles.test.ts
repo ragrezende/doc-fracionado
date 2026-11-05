@@ -70,8 +70,76 @@ describe('paridade com o JSON Schema', () => {
 });
 
 describe('carregarPerfis', () => {
-  it('carrega os dois perfis reais, ordenados por id, sem o schema', () => {
-    expect(carregarPerfis().map((p) => p.id)).toEqual(['tjgo-projudi', 'trf1-pje']);
+  it('carrega os perfis reais, ordenados por id, sem o schema', () => {
+    expect(carregarPerfis().map((p) => p.id)).toEqual([
+      'tjgo-projudi',
+      'tjsp-eproc',
+      'tjsp-esaj',
+      'trf1-pje',
+      'trt-pje-jt',
+    ]);
+  });
+});
+
+describe('perfis de TJSP e TRTs: valores lidos nas fontes e ressalvas que não podem sumir', () => {
+  const perfil = (id: string) => carregarPerfis().find((p) => p.id === id)!;
+  const tamanho = (id: string) => {
+    const r = perfil(id).restricoes.find((x) => x.tipo === 'tamanho_maximo_arquivo');
+    return r && r.tipo === 'tamanho_maximo_arquivo' ? r.bytes : undefined;
+  };
+
+  it('TRTs · PJe-JT: 10 MB por PDF (Ato Conjunto 48/2021, art. 1º), vale para todos os regionais', () => {
+    const p = perfil('trt-pje-jt');
+    expect(tamanho('trt-pje-jt')).toBe(10 * 1_048_576);
+    expect(limiteEfetivoBytes(p)).toBe(9_961_472);
+    expect(p.confianca).toBe('oficial');
+    expect(p.tribunal).toMatch(/TRTs/);
+    expect(p.observacoes).toMatch(/48\/2021/);
+    expect(p.observacoes).toMatch(/89/); // o Ato 89/2017 (3 MB) foi revogado: o perfil registra isso
+    expect(p.observacoes).toMatch(/revog/i);
+  });
+
+  it('TRTs · PJe-JT: não inventa limite de quantidade de arquivos que o ato não fixa', () => {
+    expect(perfil('trt-pje-jt').restricoes.some((r) => r.tipo === 'max_arquivos_por_peticionamento')).toBe(false);
+  });
+
+  it('TRTs · PJe-JT: avisa que a ferramenta não verifica PDF/A, exigido na petição inicial', () => {
+    expect(perfil('trt-pje-jt').lembretes.join(' ')).toMatch(/PDF\/A/);
+  });
+
+  it('TJSP · e-SAJ: 10 MB, o menor valor documentado, com a contradição das fontes registrada', () => {
+    const p = perfil('tjsp-esaj');
+    expect(tamanho('tjsp-esaj')).toBe(10 * 1_048_576);
+    expect(p.observacoes).toMatch(/contradiz|diverg|conflit/i);
+    expect(p.observacoes).toMatch(/menor valor/i);
+    expect(p.observacoes).toMatch(/Softplan/); // quem escreveu o documento-fonte
+  });
+
+  it('TJSP · e-SAJ: registra que o sistema segmenta sozinho arquivos acima de 2 MB', () => {
+    expect(perfil('tjsp-esaj').lembretes.join(' ')).toMatch(/2 ?MB/);
+  });
+
+  it('TJSP · eproc: 11 MB, e a ressalva de que o manual é do Ministério Público e da Defensoria', () => {
+    const p = perfil('tjsp-eproc');
+    expect(tamanho('tjsp-eproc')).toBe(11 * 1_048_576);
+    expect(limiteEfetivoBytes(p)).toBe(10_957_619);
+    expect(p.observacoes).toMatch(/Minist[ée]rio P[úu]blico/);
+    expect(p.observacoes).toMatch(/Defensoria/);
+    expect(p.observacoes).toMatch(/advogad/i); // diz que não foi confirmado para o painel de advogados
+  });
+
+  it('todos os perfis novos têm fonte em URL, data de verificação de hoje e lembrete de conferir a tela', () => {
+    for (const id of ['trt-pje-jt', 'tjsp-esaj', 'tjsp-eproc']) {
+      const p = perfil(id);
+      expect(p.fonte).toMatch(/^https:\/\//);
+      expect(p.verificado_em).toBe('2026-11-05');
+      expect(p.lembretes.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('o limite é respeitado no centavo: 9.961.472 bytes cabem no TRT, 9.961.473 não', () => {
+    expect(parteCumpre(perfil('trt-pje-jt'), 9_961_472, 30)).toBe(true);
+    expect(parteCumpre(perfil('trt-pje-jt'), 9_961_473, 30)).toBe(false);
   });
 });
 

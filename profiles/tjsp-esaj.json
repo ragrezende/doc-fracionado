@@ -1,0 +1,15 @@
+{
+  "id": "tjsp-esaj",
+  "tribunal": "TJSP",
+  "sistema": "e-SAJ",
+  "restricoes": [{ "tipo": "tamanho_maximo_arquivo", "bytes": 10485760 }],
+  "confianca": "oficial",
+  "fonte": "https://www.tjsp.jus.br/download/peticionamentoeletronico/manualpeteletronico.pdf",
+  "verificado_em": "2026-11-05",
+  "observacoes": "Guia rápido \"Boas Práticas para Geração de Documentos\", escrito pela Softplan (fornecedora do e-SAJ), hospedado no site do TJSP e sem data: \"o tamanho total de um único documento PDF deve ser de até 10MB\". As fontes do próprio tribunal se contradizem: as apostilas do novo portal (2023 e 2024) dizem que não há limite para anexos, e uma notícia do CNJ cita 30 MB por arquivo e 80 MB por lote. Este perfil usa o menor valor documentado: se o limite real for maior, a ferramenta gera mais partes do que o necessário, o que é inofensivo; se fosse menor, o tribunal recusaria o arquivo.",
+  "lembretes": [
+    "Confira o limite na etapa \"Anexar documentos\" do portal e-SAJ.",
+    "Segundo o guia, o e-SAJ divide sozinho um PDF acima de 2 MB em partes de até 2 MB, e o tamanho total dos documentos da petição é ilimitado.",
+    "A página do JEC do TJSP cita outros limites para petição inicial nos Juizados (300 KB por página, 30 MB por arquivo, 80 MB por petição). Esta ferramenta não comprime PDFs e não confere esses limites."
+  ]
+}

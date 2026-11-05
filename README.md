@@ -44,6 +44,11 @@ Cada tribunal é um arquivo em [`profiles/`](profiles), com a fonte do limite e 
 |---|---|---|---|
 | TJGO · Projudi | 12 MB por arquivo; em arquivos de 4 a 12 MB, média de até 2 MB por página | Notícia, não oficial | 02/11/2026 |
 | TRF1 · PJe | 20 MB por arquivo; até 40 arquivos por peticionamento | Informado por usuário | 04/11/2026 |
+| TRTs (todos os regionais) · PJe-JT | 10 MB por arquivo (Ato Conjunto TST.CSJT 48/2021) | Fonte oficial | 05/11/2026 |
+| TJSP · e-SAJ | 10 MB por arquivo, o menor valor documentado: as fontes do tribunal se contradizem | Fonte oficial | 05/11/2026 |
+| TJSP · eproc | 11 MB por arquivo, de um manual escrito para Ministério Público e Defensoria | Fonte oficial | 05/11/2026 |
+
+Dois avisos sobre esses perfis. O de **TJSP · e-SAJ** usa o menor limite que as fontes documentam: se o real for maior, você recebe mais partes do que precisaria, o que é inofensivo. E o de **TJSP · eproc** vem de um manual escrito para outro tipo de usuário, então confira a tela de envio. Os regionais da Justiça do Trabalho (como o TRT18) seguem o mesmo ato nacional; se algum tiver regra própria, ele ganha um perfil separado.
 
 Os limites são contados em MB binário (1 MB = 1.048.576 bytes), e o divisor mira 95% do limite como folga.
 

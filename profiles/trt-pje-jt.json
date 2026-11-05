@@ -1,0 +1,14 @@
+{
+  "id": "trt-pje-jt",
+  "tribunal": "TRTs (todos os regionais)",
+  "sistema": "PJe-JT",
+  "restricoes": [{ "tipo": "tamanho_maximo_arquivo", "bytes": 10485760 }],
+  "confianca": "oficial",
+  "fonte": "https://juslaboris.tst.jus.br/handle/20.500.12178/196092",
+  "verificado_em": "2026-11-05",
+  "observacoes": "Ato Conjunto TST.CSJT.GP.SG.SETIC nº 48/2021 (DEJT de 9/12/2021), art. 1º: tamanho máximo de 10 megabytes por arquivo PDF no PJe; o § 2º admite dividir PDFs em partes menores desde que cada uma respeite o limite. O art. 3º revoga o Ato 89/CSJT/2017, que fazia valer 3 MB e 20 documentos: manuais antigos que citam 1,5 MB ou 3 MB estão superados. Por ser ato do TST e do CSJT sobre o PJe-JT, entende-se que vale para todos os TRTs; um regional que publique regra própria mais restritiva ganha perfil separado. O texto foi lido na cópia do repositório do TST, que informa não substituir o original do DEJT. O ato não fixa limite de quantidade de arquivos.",
+  "lembretes": [
+    "Confira o limite exibido na tela de anexos do PJe do seu TRT.",
+    "Na petição inicial o PDF precisa estar em PDF/A (Resolução CSJT 185, art. 12, § 1º, conforme a página do TRT15). Esta ferramenta não verifica nem garante PDF/A."
+  ]
+}

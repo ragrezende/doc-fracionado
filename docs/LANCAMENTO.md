@@ -11,9 +11,15 @@ O repositório nasce **privado**. Este documento lista o que só uma pessoa pode
 - [ ] **Computador de 8 GB.** Rode `npm run bench -- --channel msedge` na sua máquina e guarde o relatório em `docs/benchmarks/`. O resultado anexado ao repositório foi medido em um container de 16 GB.
 - [ ] **E-mail dos commits.** O histórico mostra o e-mail do autor de cada commit. Decida se publica o e-mail de desenvolvimento ou o endereço `noreply` do GitHub (Settings > Emails). Trocar *depois* exige reescrever o histórico.
 
+- [ ] **Perfis de TJSP e TRTs** (adicionados em 05/11/2026):
+  - **TJSP · e-SAJ**: alguém com acesso ao e-SAJ confere o limite na etapa "Anexar documentos" e informa. Se for maior que 10 MB, ajuste o perfil e suba a `confianca` conforme a fonte. Hoje ele usa o menor valor documentado porque as fontes se contradizem.
+  - **TJSP · eproc**: confirmar se o painel de advogados tem o mesmo limite de 11 MB do manual do Ministério Público e da Defensoria.
+  - **TRT18 e demais regionais**: ler o limite na tela de anexos do PJe-JT do TRT18. Se for diferente de 10 MB, criar `profiles/trt18-pje.json` (fonte `reportado_por_usuario`).
+
 ## 2. Verificações já feitas
 
 - [x] **Licenças das dependências** (2026-11-04). `npm run check:licenses` passa: `pdf-lib` (MIT), `pdfjs-dist` (Apache-2.0), `fflate` (MIT) e as transitivas (`pako`, `tslib`) são todas permissivas. A CI repete a verificação.
+- [x] **Ato 48/2021 do CSJT lido na íntegra** (05/11/2026): art. 1º fixa 10 MB por PDF no PJe, o § 2º admite dividir PDFs, e o art. 3º revoga o Ato 89/2017 (3 MB e 20 documentos).
 - [x] **CSP e rede.** Os testes `tests/e2e/privacidade.spec.ts` provam que não há requisição externa, que `fetch` é bloqueado na página **e dentro de cada worker** (que são `blob:` e herdam a CSP do documento; um worker carregado de uma URL `http` não herdaria, porque o GitHub Pages não envia cabeçalho de CSP) e que o `index.html` não permite `eval` nem recursos de terceiros.
 - [x] **Navegadores sem `Promise.try`** (Chrome/Edge anteriores à versão 128): `tests/e2e/navegadorAntigo.spec.ts` simula esse navegador. O build moderno do pdf.js falhava nele; o build "legacy" funciona.
 
