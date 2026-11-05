@@ -1,0 +1,18 @@
+{
+  "id": "tjgo-projudi",
+  "tribunal": "TJGO",
+  "sistema": "Projudi",
+  "restricoes": [
+    { "tipo": "tamanho_maximo_arquivo", "bytes": 12582912 },
+    {
+      "tipo": "media_maxima_por_pagina",
+      "quando_arquivo_entre_bytes": [4194304, 12582912],
+      "bytes_por_pagina": 2097152
+    }
+  ],
+  "confianca": "noticia_nao_oficial",
+  "fonte": "https://www.rotajuridica.com.br/?p=177554",
+  "verificado_em": "2026-11-02",
+  "observacoes": "Página oficial do TJGO não localizada. Valores noticiados pela imprensa jurídica; data de vigência desconhecida.",
+  "lembretes": ["Confira o limite exibido na tela de envio do Projudi."]
+}

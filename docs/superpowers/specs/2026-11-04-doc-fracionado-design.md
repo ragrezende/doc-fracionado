@@ -1,7 +1,7 @@
 # Doc Fracionado: design da v0.1
 
 Data: 2026-11-04
-Estado: aguardando revisão do autor
+Estado: aprovado em 2026-11-04; v0.1 implementada
 
 ## 1. Objetivo
 
@@ -185,11 +185,12 @@ Em GitHub Actions, a cada alteração:
 - Visibilidade: privado até haver algo que valha mostrar; público no lançamento.
 - Interface e documentação em português do Brasil.
 
-## 12. Verificações pendentes antes de implementar
+## 12. Verificações
 
-Não são lacunas de design, mas fatos a confirmar na hora certa:
+Não são lacunas de design, mas fatos a confirmar na hora certa. O acompanhamento está em `docs/LANCAMENTO.md`.
 
-- Licenças de `pdf-lib` e `pdf.js`.
-- Se o TJGO publica página oficial com o limite do Projudi, para elevar a confiança do perfil.
-- Se a Portaria Presi TRF1 8016281 sofreu alterações posteriores à cópia de 2019.
-- Colisão do nome "Doc Fracionado" com outro projeto ou marca.
+- Licenças de `pdf-lib` e `pdf.js`: **verificadas em 2026-11-04** (`npm run check:licenses`; MIT e Apache-2.0).
+- Se o TJGO publica página oficial com o limite do Projudi, para elevar a confiança do perfil: pendente.
+- Se a Portaria Presi TRF1 8016281 sofreu alterações posteriores à cópia de 2019: pendente.
+- Colisão do nome "Doc Fracionado" com outro projeto ou marca: pendente.
+- Teste com um volume real do Projudi e no computador de 8 GB do autor: pendente (o portão técnico foi medido com PDFs sintéticos, em um container de 16 GB).

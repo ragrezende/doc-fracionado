@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; worker-src 'self' blob:; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <meta name="description" content="Divide PDFs para o peticionamento eletrônico, direto no navegador. Seus arquivos não saem do computador." />
+    <!-- Ícone vazio embutido: evita o pedido automático de /favicon.ico (404) e respeita a CSP. -->
+    <link rel="icon" href="data:," />
+    <title>Doc Fracionado</title>
+  </head>
+  <body>
+    <main>
+      <h1>Doc Fracionado</h1>
+      <p class="sub">Divide PDFs para o peticionamento eletrônico, direto no seu navegador.</p>
+      <p class="privacidade">
+        Seus arquivos não saem do computador. Tudo é processado aqui, no navegador, sem enviar nada a servidor algum.
+      </p>
+      <noscript><p>Esta ferramenta precisa de JavaScript para funcionar.</p></noscript>
+      <div id="app"></div>
+    </main>
+    <script type="module" src="/src/ui/main.ts"></script>
+  </body>
+</html>

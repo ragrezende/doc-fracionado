@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "$id": "https://github.com/ragrezende/doc-fracionado/profiles/schema.json",
+  "title": "Perfil de tribunal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "tribunal", "sistema", "restricoes", "confianca", "fonte", "verificado_em", "observacoes", "lembretes"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "tribunal": { "type": "string", "minLength": 1 },
+    "sistema": { "type": "string", "minLength": 1 },
+    "confianca": { "enum": ["oficial", "noticia_nao_oficial", "reportado_por_usuario"] },
+    "fonte": { "type": "string", "minLength": 1 },
+    "verificado_em": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "observacoes": { "type": "string" },
+    "lembretes": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "restricoes": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["tipo", "bytes"],
+            "properties": {
+              "tipo": { "const": "tamanho_maximo_arquivo" },
+              "bytes": { "type": "integer", "exclusiveMinimum": 0 }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["tipo", "bytes_por_pagina"],
+            "properties": {
+              "tipo": { "const": "media_maxima_por_pagina" },
+              "bytes_por_pagina": { "type": "integer", "exclusiveMinimum": 0 },
+              "quando_arquivo_entre_bytes": {
+                "type": "array",
+                "items": { "type": "integer", "minimum": 0 },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["tipo", "quantidade"],
+            "properties": {
+              "tipo": { "const": "max_arquivos_por_peticionamento" },
+              "quantidade": { "type": "integer", "exclusiveMinimum": 0 }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["tipo", "nivel"],
+            "properties": {
+              "tipo": { "const": "texto_pesquisavel" },
+              "nivel": { "const": "aviso" }
+            }
+          }
+        ]
+      },
+      "contains": {
+        "type": "object",
+        "required": ["tipo"],
+        "properties": { "tipo": { "const": "tamanho_maximo_arquivo" } }
+      },
+      "minContains": 1,
+      "maxContains": 1
+    }
+  }
+}

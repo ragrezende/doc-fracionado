@@ -1,0 +1,45 @@
+name: Publicar no GitHub Pages
+
+# Só roda quando alguém dispara ou cria uma tag de versão. Não roda a cada push em main porque o
+# GitHub Pages em repositório privado exige plano pago: o fluxo de lançamento está em
+# docs/LANCAMENTO.md (tornar o repositório público, ativar o Pages, criar a tag).
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  publicar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.implantacao.outputs.page_url }}
+    steps:
+      - id: implantacao
+        uses: actions/deploy-pages@v4

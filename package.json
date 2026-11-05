@@ -1,0 +1,32 @@
+{
+  "name": "doc-fracionado",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Divide e prepara PDFs para peticionamento eletrônico, direto no navegador.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "validate:profiles": "node scripts/validate-profiles.mjs",
+    "check:licenses": "node scripts/check-licenses.mjs",
+    "e2e": "playwright test",
+    "bench": "tsx bench/run.ts"
+  },
+  "dependencies": {
+    "fflate": "^0.8.3",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.5.438"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^26.6.6",
+    "ajv": "^8.20.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.1.0"
+  }
+}
