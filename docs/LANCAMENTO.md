@@ -21,13 +21,8 @@ O repositório nasce **privado**. Este documento lista o que só uma pessoa pode
 
 1. Em **Settings > General**, torne o repositório **público** (o GitHub Pages em repositório privado exige plano pago).
 2. Em **Settings > Pages**, escolha **Source: GitHub Actions**.
-3. Crie a tag da versão:
+3. **Publicar é automático.** O workflow `Publicar no GitHub Pages` roda a cada push no `main` (ou seja, a cada merge de PR) e também pode ser disparado à mão em **Actions > Publicar no GitHub Pages > Run workflow**. Ele roda os testes, constrói e publica em `https://<usuário>.github.io/doc-fracionado/`.
 
-   ```bash
-   git tag v0.1.0
-   git push origin v0.1.0
-   ```
-
-   O workflow `Publicar no GitHub Pages` constrói e publica em `https://<usuário>.github.io/doc-fracionado/`.
+   **Tags de versão não publicam.** O ambiente `github-pages` só aceita deploys vindos do `main`: uma tag como `v0.1.0` é recusada com *"Tag … is not allowed to deploy to github-pages due to environment protection rules"*. Marcar uma versão com tag e release é opcional e não afeta o site. Se um dia quiser que tags publiquem, adicione a regra `v*` em **Settings > Environments > github-pages > Deployment branches and tags**.
 4. Abra a página publicada e repita a conferência da privacidade (aba Rede, sem requisições externas) e um processamento completo.
 5. Só então divulgue.

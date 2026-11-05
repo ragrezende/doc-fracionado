@@ -1,12 +1,12 @@
 name: Publicar no GitHub Pages
 
-# Só roda quando alguém dispara ou cria uma tag de versão. Não roda a cada push em main porque o
-# GitHub Pages em repositório privado exige plano pago: o fluxo de lançamento está em
-# docs/LANCAMENTO.md (tornar o repositório público, ativar o Pages, criar a tag).
+# Publica a cada push no main (isto é, a cada merge de PR) e permite disparo manual.
+# Não publica por tag: o ambiente `github-pages` só aceita deploys do main, e uma tag seria recusada.
+# Detalhes em docs/LANCAMENTO.md.
 on:
   workflow_dispatch:
   push:
-    tags: ['v*']
+    branches: [main]
 
 permissions:
   contents: read
