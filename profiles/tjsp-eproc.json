@@ -1,0 +1,13 @@
+{
+  "id": "tjsp-eproc",
+  "tribunal": "TJSP",
+  "sistema": "eproc",
+  "restricoes": [{ "tipo": "tamanho_maximo_arquivo", "bytes": 11534336 }],
+  "confianca": "oficial",
+  "fonte": "https://www.tjsp.jus.br/download/EPROC/ManuaisPublicoExterno/9.1-EPROC_MPDPE-Peticionamento_Inicial.11.12.2024.pdf",
+  "verificado_em": "2026-11-05",
+  "observacoes": "Manual \"Peticionamento Inicial: Eproc para Ministério Público e Defensoria Pública\", atualizado em 11/12/2024: documentos PDF, HTM, HTML e KML têm tamanho máximo de 11 MB, e é possível selecionar quantos arquivos forem necessários. O manual é escrito para o perfil Procurador (Ministério Público e Defensoria), e não foi confirmado que o painel de advogados tenha o mesmo limite.",
+  "lembretes": [
+    "Confira o limite na tela de anexos do eproc: o valor deste perfil vem de um manual escrito para outro perfil de usuário."
+  ]
+}
